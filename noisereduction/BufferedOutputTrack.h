@@ -9,7 +9,7 @@ public:
     void Append(float* buffer, size_t length);
     const FloatVector& Buffer() const { return mBuffer; }
     size_t Length() const { return mLength; }
-    void SetLength(size_t length);
+    void SetEnd(size_t newLength);
 private:
     FloatVector mBuffer;
     size_t mLength;

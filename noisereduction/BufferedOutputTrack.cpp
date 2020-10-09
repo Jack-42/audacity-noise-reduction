@@ -1,8 +1,8 @@
 #include "BufferedOutputTrack.h"
 #include <assert.h>
 
-BufferedOutputTrack::BufferedOutputTrack()
-    : mLength(0)
+BufferedOutputTrack::BufferedOutputTrack() :
+    mLength(0)
 { }
 
 void BufferedOutputTrack::Append(float* buffer, size_t length)
@@ -11,8 +11,8 @@ void BufferedOutputTrack::Append(float* buffer, size_t length)
     mLength += length;
 }
 
-void BufferedOutputTrack::SetLength(size_t length)
+void BufferedOutputTrack::SetEnd(size_t newLength)
 {
-    assert(length <= mLength);
-    mLength = length;
+    assert(newLength <= mLength);
+    mLength = newLength;
 }

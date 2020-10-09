@@ -1,8 +1,8 @@
 #include "BufferedInputTrack.h"
 
-BufferedInputTrack::BufferedInputTrack(const FloatVector& buffer)
-    : mBuffer(buffer)
-    , mPosition(0)
+BufferedInputTrack::BufferedInputTrack(const FloatVector& buffer) :
+    mBuffer(buffer),
+    mPosition(0)
 { }
 
 size_t BufferedInputTrack::Read(float* buffer, size_t length)
@@ -15,7 +15,7 @@ size_t BufferedInputTrack::Read(float* buffer, size_t length)
             // reached end of this buffer
             break;
         }
-        
+
         *writePtr = mBuffer[mPosition];
         mPosition++;
         writePtr++;
