@@ -1,6 +1,7 @@
 #include "BufferedTrackUtils.h"
 #include "loguru.hpp"
 #include <memory>
+#include <iostream> // TODO: Remove (only used for debugging)
 
 std::vector<BufferedInputTrack> BufferedTrackUtils::readTracksFromContext(const SndContext& ctx, size_t t0/* = 0*/, size_t t1/* = 0*/)
 {
@@ -12,14 +13,18 @@ std::vector<BufferedInputTrack> BufferedTrackUtils::readTracksFromContext(const 
         tracks.push_back(track);
     }
 
+    std::cout << "read tracks end" << std::endl;
+
     return tracks;
 }
 
 BufferedInputTrack BufferedTrackUtils::readOneTrackFromContext(const SndContext &ctx, int channel, size_t t0/* = 0*/, size_t t1/* = 0*/)
 {
+    std::cout << "t1: " << t1 << std::endl;
     // if t1 is undefined, read full track
     if (t1 == 0)
         t1 = (size_t)ctx.info.frames;
+    std::cout << "t1: " << t1 << std::endl;
 
     const size_t frameCount = t1 - t0;
     FloatVector buffer(frameCount);
@@ -45,8 +50,13 @@ BufferedInputTrack BufferedTrackUtils::readOneTrackFromContext(const SndContext 
     return BufferedInputTrack(buffer);
 }
 
-void BufferedTrackUtils::writeTracksToFile(const std::vector<BufferedOutputTrack> &tracks, const char* path, int channels, int sampleRate)
+void BufferedTrackUtils::writeTracksToFile(const char* path, const std::vector<BufferedOutputTrack> &tracks, int channels, int sampleRate)
 {
+    if (tracks.empty()) {
+        LOG_F(WARNING, "Tracks are empty");
+        return;
+    }
+
     SF_INFO info = { };
     info.channels = channels;
     info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
@@ -58,6 +68,7 @@ void BufferedTrackUtils::writeTracksToFile(const std::vector<BufferedOutputTrack
     }
 
     size_t frameCount = tracks[0].Length();
+    std::cout << "hello 6" << std::endl;
     LOG_F(INFO, "Writing %zd frames to file", frameCount);
 
     // copy audio to buffer so that channels are interleaved

@@ -6,6 +6,7 @@ class BufferedInputTrack
 {
 public:
     BufferedInputTrack(const FloatVector& buffer);
+    const FloatVector& Buffer() const { return mBuffer; }
     size_t Length() const { return mBuffer.size(); }
     size_t Read(float* buffer, size_t length);
 private:

@@ -1,5 +1,6 @@
 #include "BufferedOutputTrack.h"
 #include <assert.h>
+#include <iostream> // TODO: Remove, only debugging
 
 BufferedOutputTrack::BufferedOutputTrack() :
     mLength(0)
