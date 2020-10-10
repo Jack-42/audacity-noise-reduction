@@ -21,7 +21,7 @@ BufferedInputTrack BufferedTrackUtils::readOneTrackFromContext(const SndContext 
     if (t1 == 0)
         t1 = (size_t)ctx.info.frames;
 
-    const size_t frameCount = t1 - t0 - 1;
+    const size_t frameCount = t1 - t0;
     FloatVector buffer(frameCount);
     
     sf_seek(ctx.file, t0, SEEK_SET);
