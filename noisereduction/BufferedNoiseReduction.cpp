@@ -141,21 +141,21 @@ public:
     );
     BufferedNoiseReductionWorker();
 
-    bool ProcessOne(BufferedStatistics &BufferedStatistics, BufferedInputTrack& track, BufferedOutputTrack* outputTrack);
+    bool ProcessOne(BufferedStatistics &statistics, BufferedInputTrack& track, BufferedOutputTrack* outputTrack);
 
 private:
 
     void StartNewTrack();
-    void ProcessSamples(BufferedStatistics &BufferedStatistics,
+    void ProcessSamples(BufferedStatistics &statistics,
                         float *buffer, size_t len, BufferedOutputTrack* outputTrack);
     void FillFirstHistoryWindow();
     void ApplyFreqSmoothing(FloatVector &gains);
-    void GatherStatistics(BufferedStatistics &BufferedStatistics);
-    inline bool Classify(const BufferedStatistics &BufferedStatistics, int band);
-    void ReduceNoise(const BufferedStatistics &BufferedStatistics, BufferedOutputTrack* outputTrack);
+    void GatherStatistics(BufferedStatistics &statistics);
+    inline bool Classify(const BufferedStatistics &statistics, int band);
+    void ReduceNoise(const BufferedStatistics &statistics, BufferedOutputTrack* outputTrack);
     void RotateHistoryWindows();
-    void FinishTrackStatistics(BufferedStatistics &BufferedStatistics);
-    void FinishTrack(BufferedStatistics &BufferedStatistics, BufferedOutputTrack* outputTrack);
+    void FinishTrackStatistics(BufferedStatistics &statistics);
+    void FinishTrack(BufferedStatistics &statistics, BufferedOutputTrack* outputTrack);
 
 private:
 
@@ -518,29 +518,29 @@ void BufferedNoiseReductionWorker::RotateHistoryWindows()
     std::rotate(mQueue.begin(), mQueue.end() - 1, mQueue.end());
 }
 
-void BufferedNoiseReductionWorker::FinishTrackStatistics(BufferedStatistics &BufferedStatistics)
+void BufferedNoiseReductionWorker::FinishTrackStatistics(BufferedStatistics &statistics)
 {
-    const int windows = BufferedStatistics.mTrackWindows;
-    const int multiplier = BufferedStatistics.mTotalWindows;
+    const int windows = statistics.mTrackWindows;
+    const int multiplier = statistics.mTotalWindows;
     const int denom = windows + multiplier;
 
     // Combine averages in case of multiple profile tracks.
     if (windows)
-        for (int ii = 0, nn = BufferedStatistics.mMeans.size(); ii < nn; ++ii) {
-            float &mean = BufferedStatistics.mMeans[ii];
-            float &sum = BufferedStatistics.mSums[ii];
+        for (int ii = 0, nn = statistics.mMeans.size(); ii < nn; ++ii) {
+            float &mean = statistics.mMeans[ii];
+            float &sum = statistics.mSums[ii];
             mean = (mean * multiplier + sum) / denom;
             // Reset for next track
             sum = 0;
         }
 
     // Reset for next track
-    BufferedStatistics.mTrackWindows = 0;
-    BufferedStatistics.mTotalWindows = denom;
+    statistics.mTrackWindows = 0;
+    statistics.mTotalWindows = denom;
 }
 
 void BufferedNoiseReductionWorker::FinishTrack
-(BufferedStatistics &BufferedStatistics, BufferedOutputTrack* outputTrack)
+(BufferedStatistics &statistics, BufferedOutputTrack* outputTrack)
 {
     // Keep flushing empty input buffers through the history
     // windows until we've output exactly as many samples as
@@ -552,18 +552,18 @@ void BufferedNoiseReductionWorker::FinishTrack
     FloatVector empty(mStepSize);
 
     while (mOutStepCount * mStepSize < mInSampleCount) {
-        ProcessSamples(BufferedStatistics, &empty[0], mStepSize, outputTrack);
+        ProcessSamples(statistics, &empty[0], mStepSize, outputTrack);
     }
 }
 
-void BufferedNoiseReductionWorker::GatherStatistics(BufferedStatistics &BufferedStatistics)
+void BufferedNoiseReductionWorker::GatherStatistics(BufferedStatistics &statistics)
 {
-    ++BufferedStatistics.mTrackWindows;
+    ++statistics.mTrackWindows;
 
     {
         // NEW BufferedStatistics
         const float *pPower = &mQueue[0]->mSpectrums[0];
-        float *pSum = &BufferedStatistics.mSums[0];
+        float *pSum = &statistics.mSums[0];
         for (size_t jj = 0; jj < mSpectrumSize; ++jj) {
             *pSum++ += *pPower++;
         }
@@ -594,7 +594,7 @@ void BufferedNoiseReductionWorker::GatherStatistics(BufferedStatistics &Buffered
 // Return true iff the given band of the "center" window looks like noise.
 // Examine the band in a few neighboring windows to decide.
 inline
-bool BufferedNoiseReductionWorker::Classify(const BufferedStatistics &BufferedStatistics, int band)
+bool BufferedNoiseReductionWorker::Classify(const BufferedStatistics &statistics, int band)
 {
     switch (mMethod) {
 #ifdef OLD_METHOD_AVAILABLE
@@ -603,7 +603,7 @@ bool BufferedNoiseReductionWorker::Classify(const BufferedStatistics &BufferedSt
             float min = mQueue[0]->mSpectrums[band];
             for (unsigned ii = 1; ii < mNWindowsToExamine; ++ii)
                 min = std::min(min, mQueue[ii]->mSpectrums[band]);
-            return min <= mOldSensitivityFactor * BufferedStatistics.mNoiseThreshold[band];
+            return min <= mOldSensitivityFactor * statistics.mNoiseThreshold[band];
         }
 #endif
             // New methods suppose an exponential distribution of power values
@@ -634,7 +634,7 @@ bool BufferedNoiseReductionWorker::Classify(const BufferedStatistics &BufferedSt
                     else if (power >= third)
                         third = power;
                 }
-                return third <= mNewSensitivity * BufferedStatistics.mMeans[band];
+                return third <= mNewSensitivity * statistics.mMeans[band];
             }
             else {
                 assert(false);
@@ -654,7 +654,7 @@ bool BufferedNoiseReductionWorker::Classify(const BufferedStatistics &BufferedSt
                 else if (power >= second)
                     second = power;
             }
-            return second <= mNewSensitivity * BufferedStatistics.mMeans[band];
+            return second <= mNewSensitivity * statistics.mMeans[band];
         }
         default:
             assert(false);
@@ -663,7 +663,7 @@ bool BufferedNoiseReductionWorker::Classify(const BufferedStatistics &BufferedSt
 }
 
 void BufferedNoiseReductionWorker::ReduceNoise
-(const BufferedStatistics &BufferedStatistics, BufferedOutputTrack* outputTrack)
+(const BufferedStatistics &statistics, BufferedOutputTrack* outputTrack)
 {
     // Raise the gain for elements in the center of the sliding history
     // or, if isolating noise, zero out the non-noise
@@ -675,7 +675,7 @@ void BufferedNoiseReductionWorker::ReduceNoise
             std::fill(pGain + mBinHigh, pGain + mSpectrumSize, 0.0f);
             pGain += mBinLow;
             for (int jj = mBinLow; jj < mBinHigh; ++jj) {
-                const bool isNoise = Classify(BufferedStatistics, jj);
+                const bool isNoise = Classify(statistics, jj);
                 *pGain++ = isNoise ? 1.0 : 0.0;
             }
         }
@@ -685,7 +685,7 @@ void BufferedNoiseReductionWorker::ReduceNoise
             std::fill(pGain + mBinHigh, pGain + mSpectrumSize, 1.0f);
             pGain += mBinLow;
             for (int jj = mBinLow; jj < mBinHigh; ++jj) {
-                const bool isNoise = Classify(BufferedStatistics, jj);
+                const bool isNoise = Classify(statistics, jj);
                 if (!isNoise)
                     *pGain = 1.0;
                 ++pGain;
@@ -860,14 +860,14 @@ BufferedNoiseReduction::BufferedNoiseReduction(BufferedNoiseReduction::Settings&
     mStatistics.reset(new BufferedStatistics(spectrumSize, mSampleRate, mSettings.mWindowTypes));
 }
 
-void BufferedNoiseReduction::ProfileNoise(BufferedInputTrack &inputTrack) {
+void BufferedNoiseReduction::ProfileNoise(BufferedInputTrack &profileTrack) {
     LOG_SCOPE_F(INFO, "Profiling noise");
 
     BufferedNoiseReduction::Settings profileSettings(mSettings);
     profileSettings.mDoProfile = true;
     BufferedNoiseReductionWorker profileWorker(profileSettings, mSampleRate);
 
-    if (!profileWorker.ProcessOne(*this->mStatistics, inputTrack, nullptr)) {
+    if (!profileWorker.ProcessOne(*this->mStatistics, profileTrack, nullptr)) {
         throw std::runtime_error("Cannot process track");
     }
 

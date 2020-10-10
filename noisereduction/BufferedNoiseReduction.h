@@ -47,7 +47,7 @@ public:
     };
 
     BufferedNoiseReduction(BufferedNoiseReduction::Settings& settings, double sampleRate);
-    void ProfileNoise(BufferedInputTrack& inputTrack);
+    void ProfileNoise(BufferedInputTrack& profileTrack);
     void ReduceNoise(BufferedInputTrack& inputTrack, BufferedOutputTrack &outputTrack);
 private:
     std::unique_ptr<BufferedStatistics> mStatistics;

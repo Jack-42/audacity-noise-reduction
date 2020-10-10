@@ -1,5 +1,5 @@
 #include <iostream>
-#include "NoiseReduction.h"
+//#include "NoiseReduction.h"
 #include "BufferedNoiseReduction.h"
 #include "BufferedInputTrack.h"
 #include "BufferedOutputTrack.h"
@@ -43,6 +43,7 @@ int main(int argc, char * argv[]) {
 
     auto ctx = openAudioFile(result["input"].as<std::string>().c_str());
 
+#if 0
     NoiseReduction::Settings settings;
     settings.mNewSensitivity = result["sensitivity"].as<float>();
     settings.mFreqSmoothingBands = result["smoothing"].as<int>();
@@ -60,26 +61,51 @@ int main(int argc, char * argv[]) {
         t1 = result["t1"].as<size_t>();
     }
 
-    std::cout << "hello" << std::endl;
-
-#if 0
     std::cout << "Profiling noise..." << std::endl;
     reduction.ProfileNoise(t0, t1);
     std::cout << "Denoising..." << std::endl;
     reduction.ReduceNoise(result["output"].as<std::string>().c_str());
 #endif
 
+// test noise reduction with buffered classes
 #if 1
-    // TODO: test noise reduction with buffered classes
-    // first test: write output track without any change
+    BufferedNoiseReduction::Settings settings;
+    settings.mNewSensitivity = result["sensitivity"].as<float>();
+    settings.mFreqSmoothingBands = result["smoothing"].as<int>();
+    settings.mNoiseGain = result["noiseGain"].as<float>();
+
+    BufferedNoiseReduction reduction(settings, ctx.info.samplerate);
+
+    size_t t0 = 0;
+    size_t t1 = ctx.info.frames;
+    if (result["t0"].count()) {
+        t0 = result["t0"].as<size_t>();
+    }
+
+    if (result["t1"].count()) {
+        t1 = result["t1"].as<size_t>();
+    }
+
+    std::cout << "Profiling noise..." << std::endl;
+    std::vector<BufferedInputTrack> profileTracks = BufferedTrackUtils::readTracksFromContext(ctx, t0, t1);
+    for (auto& profileTrack : profileTracks) {
+        reduction.ProfileNoise(profileTrack);
+    }
+
+    std::cout << "Denoising..." << std::endl;
     std::vector<BufferedInputTrack> inputTracks = BufferedTrackUtils::readTracksFromContext(ctx);
     std::vector<BufferedOutputTrack> outputTracks;
-    
-    for (const auto& inputTrack : inputTracks) {
+    for (auto& inputTrack : inputTracks) {
         BufferedOutputTrack outputTrack;
-        outputTrack.Append((float*)(&(inputTrack.Buffer()[0])), inputTrack.Length());
+        reduction.ReduceNoise(inputTrack, outputTrack);
         outputTracks.push_back(outputTrack);
     }
+    
+    /*for (const auto& inputTrack : inputTracks) {
+        BufferedOutputTrack outputTrack;
+        outputTrack.Append((float*)&inputTrack.Buffer()[0], inputTrack.Length());
+        outputTracks.push_back(outputTrack);
+    }*/
 
     const char* outputPath = result["output"].as<std::string>().c_str();
     BufferedTrackUtils::writeTracksToFile(outputPath, outputTracks, ctx.info.channels, ctx.info.samplerate);
