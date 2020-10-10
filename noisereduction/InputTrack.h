@@ -2,10 +2,10 @@
 
 #include "Types.h"
 
-class BufferedInputTrack
+class InputTrack
 {
 public:
-    BufferedInputTrack(const FloatVector& buffer);
+    InputTrack(const FloatVector& buffer);
     const FloatVector& Buffer() const { return mBuffer; }
     size_t Length() const { return mBuffer.size(); }
     size_t Read(float* buffer, size_t length);

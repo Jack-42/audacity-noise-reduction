@@ -1,11 +1,11 @@
 /**********************************************************************
   Audacity: A Digital Audio Editor
-  BufferedNoiseReduction.cpp
+  NoiseReduction.cpp
   Dominic Mazzoni
   detailed rewriting by
   Paul Licameli
 *******************************************************************//**
-\class EffectBufferedNoiseReduction
+\class EffectNoiseReduction
 \brief A two-pass effect to reduce background noise.
   The first pass is done over just noise.  For each windowed sample
   of the sound, we take a FFT and then statistics are tabulated for
@@ -25,7 +25,7 @@
   the output signal is then pieced together using overlap/add.
 *//****************************************************************//**
 */
-#include "BufferedNoiseReduction.h"
+#include "NoiseReduction.h"
 #include <math.h>
 #include <assert.h>
 #include <exception>
@@ -33,9 +33,6 @@
 #include "RealFFTf.h"
 #include "Types.h"
 #include <string.h>
-
-
-const auto OUTPUT_FORMAT = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
 enum DiscriminationMethod {
     DM_MEDIAN,
@@ -88,16 +85,16 @@ enum {
     DEFAULT_STEPS_PER_WINDOW_CHOICE = 1 // corresponds to 4, minimum for WT_HANN_HANN
 };
 
-enum BufferedNoiseReductionChoice {
+enum NoiseReductionChoice {
     NRC_REDUCE_NOISE,
     NRC_ISOLATE_NOISE,
     NRC_LEAVE_RESIDUE,
 };
 
-class BufferedStatistics
+class Statistics
 {
 public:
-    BufferedStatistics(size_t spectrumSize, double rate, int windowTypes)
+    Statistics(size_t spectrumSize, double rate, int windowTypes)
     : mRate(rate)
     , mWindowSize((spectrumSize - 1) * 2)
     , mWindowTypes(windowTypes)
@@ -122,40 +119,40 @@ public:
     FloatVector mMeans;
 
 #ifdef OLD_METHOD_AVAILABLE
-    // Old BufferedStatistics:
+    // Old statistics:
     FloatVector mNoiseThreshold;
 #endif
 };
 
 // This object holds information needed only during effect calculation
-class BufferedNoiseReductionWorker
+class NoiseReductionWorker
 {
 public:
-    typedef BufferedNoiseReduction::Settings Settings;
-    typedef BufferedStatistics BufferedStatistics;
+    typedef NoiseReduction::Settings Settings;
+    typedef Statistics BufferedStatistics;
 
-    BufferedNoiseReductionWorker(const BufferedNoiseReduction::Settings &settings, double sampleRate
+    NoiseReductionWorker(const NoiseReduction::Settings &settings, double sampleRate
 #ifdef EXPERIMENTAL_SPECTRAL_EDITING
                                , double f0, double f1
 #endif
     );
-    BufferedNoiseReductionWorker();
+    NoiseReductionWorker();
 
-    bool ProcessOne(BufferedStatistics &statistics, BufferedInputTrack& track, BufferedOutputTrack* outputTrack);
+    bool ProcessOne(BufferedStatistics &statistics, InputTrack& track, OutputTrack* outputTrack);
 
 private:
 
     void StartNewTrack();
     void ProcessSamples(BufferedStatistics &statistics,
-                        float *buffer, size_t len, BufferedOutputTrack* outputTrack);
+                        float *buffer, size_t len, OutputTrack* outputTrack);
     void FillFirstHistoryWindow();
     void ApplyFreqSmoothing(FloatVector &gains);
     void GatherStatistics(BufferedStatistics &statistics);
     inline bool Classify(const BufferedStatistics &statistics, int band);
-    void ReduceNoise(const BufferedStatistics &statistics, BufferedOutputTrack* outputTrack);
+    void ReduceNoise(const BufferedStatistics &statistics, OutputTrack* outputTrack);
     void RotateHistoryWindows();
     void FinishTrackStatistics(BufferedStatistics &statistics);
-    void FinishTrack(BufferedStatistics &statistics, BufferedOutputTrack* outputTrack);
+    void FinishTrack(BufferedStatistics &statistics, OutputTrack* outputTrack);
 
 private:
 
@@ -180,7 +177,7 @@ private:
     int mBinLow;  // inclusive lower bound
     int mBinHigh; // exclusive upper bound
 
-    const int mBufferedNoiseReductionChoice;
+    const int mNoiseReductionChoice;
     const unsigned mStepsPerWindow;
     const size_t mStepSize;
     const int mMethod;
@@ -218,7 +215,7 @@ private:
     std::vector<movable_ptr<Record>> mQueue;
 };
 
-void BufferedNoiseReductionWorker::ApplyFreqSmoothing(FloatVector &gains)
+void NoiseReductionWorker::ApplyFreqSmoothing(FloatVector &gains)
 {
     // Given an array of gain mutipliers, average them
     // GEOMETRICALLY.  Don't multiply and take nth root --
@@ -248,8 +245,8 @@ void BufferedNoiseReductionWorker::ApplyFreqSmoothing(FloatVector &gains)
         gains[ii] = exp(mFreqSmoothingScratch[ii]);
 }
 
-BufferedNoiseReductionWorker::BufferedNoiseReductionWorker
-(const BufferedNoiseReduction::Settings &settings, double sampleRate
+NoiseReductionWorker::NoiseReductionWorker
+(const NoiseReduction::Settings &settings, double sampleRate
 #ifdef EXPERIMENTAL_SPECTRAL_EDITING
  , double f0, double f1
 #endif
@@ -272,7 +269,7 @@ BufferedNoiseReductionWorker::BufferedNoiseReductionWorker
 , mBinLow(0)
 , mBinHigh(mSpectrumSize)
 
-, mBufferedNoiseReductionChoice(settings.mNoiseReductionChoice)
+, mNoiseReductionChoice(settings.mNoiseReductionChoice)
 , mStepsPerWindow(settings.StepsPerWindow())
 , mStepSize(mWindowSize / mStepsPerWindow)
 , mMethod(settings.mMethod)
@@ -394,7 +391,7 @@ BufferedNoiseReductionWorker::BufferedNoiseReductionWorker
     }
 }
 
-void BufferedNoiseReductionWorker::StartNewTrack()
+void NoiseReductionWorker::StartNewTrack()
 {
     float *pFill;
     for(unsigned ii = 0; ii < mHistoryLen; ++ii) {
@@ -441,8 +438,8 @@ void BufferedNoiseReductionWorker::StartNewTrack()
     mInSampleCount = 0;
 }
 
-void BufferedNoiseReductionWorker::ProcessSamples
-(BufferedStatistics &statistics, float *buffer, size_t len, BufferedOutputTrack* outputTrack)
+void NoiseReductionWorker::ProcessSamples
+(BufferedStatistics &statistics, float *buffer, size_t len, OutputTrack* outputTrack)
 {
     while (len && mOutStepCount * mStepSize < mInSampleCount) {
         auto avail = std::min(len, mWindowSize - mInWavePos);
@@ -468,7 +465,7 @@ void BufferedNoiseReductionWorker::ProcessSamples
     }
 }
 
-void BufferedNoiseReductionWorker::FillFirstHistoryWindow()
+void NoiseReductionWorker::FillFirstHistoryWindow()
 {
     // Transform samples to frequency domain, windowed as needed
     if (mInWindow.size() > 0)
@@ -504,7 +501,7 @@ void BufferedNoiseReductionWorker::FillFirstHistoryWindow()
         record.mSpectrums[last] = nyquist * nyquist;
     }
 
-    if (mBufferedNoiseReductionChoice != NRC_ISOLATE_NOISE)
+    if (mNoiseReductionChoice != NRC_ISOLATE_NOISE)
     {
         // Default all gains to the reduction factor,
         // until we decide to raise some of them later
@@ -513,12 +510,12 @@ void BufferedNoiseReductionWorker::FillFirstHistoryWindow()
     }
 }
 
-void BufferedNoiseReductionWorker::RotateHistoryWindows()
+void NoiseReductionWorker::RotateHistoryWindows()
 {
     std::rotate(mQueue.begin(), mQueue.end() - 1, mQueue.end());
 }
 
-void BufferedNoiseReductionWorker::FinishTrackStatistics(BufferedStatistics &statistics)
+void NoiseReductionWorker::FinishTrackStatistics(BufferedStatistics &statistics)
 {
     const int windows = statistics.mTrackWindows;
     const int multiplier = statistics.mTotalWindows;
@@ -539,8 +536,8 @@ void BufferedNoiseReductionWorker::FinishTrackStatistics(BufferedStatistics &sta
     statistics.mTotalWindows = denom;
 }
 
-void BufferedNoiseReductionWorker::FinishTrack
-(BufferedStatistics &statistics, BufferedOutputTrack* outputTrack)
+void NoiseReductionWorker::FinishTrack
+(BufferedStatistics &statistics, OutputTrack* outputTrack)
 {
     // Keep flushing empty input buffers through the history
     // windows until we've output exactly as many samples as
@@ -556,12 +553,12 @@ void BufferedNoiseReductionWorker::FinishTrack
     }
 }
 
-void BufferedNoiseReductionWorker::GatherStatistics(BufferedStatistics &statistics)
+void NoiseReductionWorker::GatherStatistics(BufferedStatistics &statistics)
 {
     ++statistics.mTrackWindows;
 
     {
-        // NEW BufferedStatistics
+        // NEW statistics
         const float *pPower = &mQueue[0]->mSpectrums[0];
         float *pSum = &statistics.mSums[0];
         for (size_t jj = 0; jj < mSpectrumSize; ++jj) {
@@ -577,9 +574,9 @@ void BufferedNoiseReductionWorker::GatherStatistics(BufferedStatistics &statisti
     auto finish = mHistoryLen;
 
     {
-        // old BufferedStatistics
+        // old statistics
         const float *pPower = &mQueue[0]->mSpectrums[0];
-        float *pThreshold = &BufferedStatistics.mNoiseThreshold[0];
+        float *pThreshold = &statistics.mNoiseThreshold[0];
         for (int jj = 0; jj < mSpectrumSize; ++jj) {
             float min = *pPower++;
             for (unsigned ii = 1; ii < finish; ++ii)
@@ -594,7 +591,7 @@ void BufferedNoiseReductionWorker::GatherStatistics(BufferedStatistics &statisti
 // Return true iff the given band of the "center" window looks like noise.
 // Examine the band in a few neighboring windows to decide.
 inline
-bool BufferedNoiseReductionWorker::Classify(const BufferedStatistics &statistics, int band)
+bool NoiseReductionWorker::Classify(const BufferedStatistics &statistics, int band)
 {
     switch (mMethod) {
 #ifdef OLD_METHOD_AVAILABLE
@@ -662,14 +659,14 @@ bool BufferedNoiseReductionWorker::Classify(const BufferedStatistics &statistics
     }
 }
 
-void BufferedNoiseReductionWorker::ReduceNoise
-(const BufferedStatistics &statistics, BufferedOutputTrack* outputTrack)
+void NoiseReductionWorker::ReduceNoise
+(const BufferedStatistics &statistics, OutputTrack* outputTrack)
 {
     // Raise the gain for elements in the center of the sliding history
     // or, if isolating noise, zero out the non-noise
     {
         float *pGain = &mQueue[mCenter]->mGains[0];
-        if (mBufferedNoiseReductionChoice == NRC_ISOLATE_NOISE) {
+        if (mNoiseReductionChoice == NRC_ISOLATE_NOISE) {
             // All above or below the selected frequency range is non-noise
             std::fill(pGain, pGain + mBinLow, 0.0f);
             std::fill(pGain + mBinHigh, pGain + mSpectrumSize, 0.0f);
@@ -693,7 +690,7 @@ void BufferedNoiseReductionWorker::ReduceNoise
         }
     }
 
-    if (mBufferedNoiseReductionChoice != NRC_ISOLATE_NOISE)
+    if (mNoiseReductionChoice != NRC_ISOLATE_NOISE)
     {
         // In each direction, define an exponential decay of gain from the
         // center; make actual gains the maximum of mNoiseAttenFactor, and
@@ -737,7 +734,7 @@ void BufferedNoiseReductionWorker::ReduceNoise
         Record &record = *mQueue[mHistoryLen - 1];  // end of the queue
         const auto last = mSpectrumSize - 1;
 
-        if (mBufferedNoiseReductionChoice != NRC_ISOLATE_NOISE)
+        if (mNoiseReductionChoice != NRC_ISOLATE_NOISE)
             // Apply frequency smoothing to output gain
             // Gains are not less than mNoiseAttenFactor
             ApplyFreqSmoothing(record.mGains);
@@ -749,7 +746,7 @@ void BufferedNoiseReductionWorker::ReduceNoise
             const float *pImag = &record.mImagFFTs[1];
             float *pBuffer = &mFFTBuffer[2];
             auto nn = mSpectrumSize - 2;
-            if (mBufferedNoiseReductionChoice == NRC_LEAVE_RESIDUE) {
+            if (mNoiseReductionChoice == NRC_LEAVE_RESIDUE) {
                 for (; nn--;) {
                     // Subtract the gain we would otherwise apply from 1, and
                     // negate that to flip the phase.
@@ -809,7 +806,7 @@ void BufferedNoiseReductionWorker::ReduceNoise
     }
 }
 
-bool BufferedNoiseReductionWorker::ProcessOne(BufferedStatistics &statistics, BufferedInputTrack& inputTrack, BufferedOutputTrack* outputTrack)
+bool NoiseReductionWorker::ProcessOne(BufferedStatistics &statistics, InputTrack& inputTrack, OutputTrack* outputTrack)
 {
     /**
      * Frames coming from libsndfile are striped, channel-wise: [{left, right},  {left, right}, ...]
@@ -852,25 +849,25 @@ bool BufferedNoiseReductionWorker::ProcessOne(BufferedStatistics &statistics, Bu
 
 
 
-BufferedNoiseReduction::BufferedNoiseReduction(BufferedNoiseReduction::Settings& settings, double sampleRate) :
+NoiseReduction::NoiseReduction(NoiseReduction::Settings& settings, double sampleRate) :
     mSettings(settings),
     mSampleRate(sampleRate)
 {
     size_t spectrumSize = 1 + mSettings.WindowSize() / 2;
-    mStatistics.reset(new BufferedStatistics(spectrumSize, mSampleRate, mSettings.mWindowTypes));
+    mStatistics.reset(new Statistics(spectrumSize, mSampleRate, mSettings.mWindowTypes));
 }
 
 // found out why destructor is important:
 // otherwise error with unique_ptr because Statistics is incomplete type
 // also important to define destructor here, not directly in header, because Statistics needs to be defined
-BufferedNoiseReduction::~BufferedNoiseReduction() = default;
+NoiseReduction::~NoiseReduction() = default;
 
-void BufferedNoiseReduction::ProfileNoise(BufferedInputTrack &profileTrack) {
+void NoiseReduction::ProfileNoise(InputTrack &profileTrack) {
     LOG_SCOPE_F(INFO, "Profiling noise");
 
-    BufferedNoiseReduction::Settings profileSettings(mSettings);
+    NoiseReduction::Settings profileSettings(mSettings);
     profileSettings.mDoProfile = true;
-    BufferedNoiseReductionWorker profileWorker(profileSettings, mSampleRate);
+    NoiseReductionWorker profileWorker(profileSettings, mSampleRate);
 
     if (!profileWorker.ProcessOne(*this->mStatistics, profileTrack, nullptr)) {
         throw std::runtime_error("Cannot process track");
@@ -884,19 +881,19 @@ void BufferedNoiseReduction::ProfileNoise(BufferedInputTrack &profileTrack) {
     LOG_F(INFO, "Total Windows: %d", (int)mStatistics->mTotalWindows);
 }
 
-void BufferedNoiseReduction::ReduceNoise(BufferedInputTrack &inputTrack, BufferedOutputTrack &outputTrack) {
+void NoiseReduction::ReduceNoise(InputTrack &inputTrack, OutputTrack &outputTrack) {
     LOG_SCOPE_F(INFO, "Reducing noise");
 
-    BufferedNoiseReduction::Settings cleanSettings(mSettings);
+    NoiseReduction::Settings cleanSettings(mSettings);
     cleanSettings.mDoProfile = false;
-    BufferedNoiseReductionWorker cleanWorker(cleanSettings, mSampleRate);
+    NoiseReductionWorker cleanWorker(cleanSettings, mSampleRate);
 
     if (!cleanWorker.ProcessOne(*this->mStatistics, inputTrack, &outputTrack)) {
         throw std::runtime_error("Cannot process track");
     }
 }
 
-BufferedNoiseReduction::Settings::Settings() {
+NoiseReduction::Settings::Settings() {
     mDoProfile = false;
 
     mWindowTypes = WT_DEFAULT_WINDOW_TYPES;

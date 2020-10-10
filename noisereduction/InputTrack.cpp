@@ -1,11 +1,11 @@
-#include "BufferedInputTrack.h"
+#include "InputTrack.h"
 
-BufferedInputTrack::BufferedInputTrack(const FloatVector& buffer) :
+InputTrack::InputTrack(const FloatVector& buffer) :
     mBuffer(buffer),
     mPosition(0)
 { }
 
-size_t BufferedInputTrack::Read(float* buffer, size_t length)
+size_t InputTrack::Read(float* buffer, size_t length)
 {
     float *writePtr = buffer;
     size_t totalRead = 0;

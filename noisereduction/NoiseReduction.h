@@ -9,17 +9,17 @@
 
 #include <memory>
 #include "Utils.h"
-#include "BufferedInputTrack.h"
-#include "BufferedOutputTrack.h"
+#include "InputTrack.h"
+#include "OutputTrack.h"
 
 #define DB_TO_LINEAR(x) (pow(10.0, (x) / 20.0))
 #define LINEAR_TO_DB(x) (20.0 * log10(x))
 
 typedef char *samplePtr;
 
-class BufferedNoiseReductionWorker;
-class BufferedStatistics;
-class BufferedNoiseReduction {
+class NoiseReductionWorker;
+class Statistics;
+class NoiseReduction {
 public:
     struct Settings {
         Settings();
@@ -46,12 +46,12 @@ public:
         int        mMethod;
     };
 
-    BufferedNoiseReduction(BufferedNoiseReduction::Settings& settings, double sampleRate);
-    ~BufferedNoiseReduction();
-    void ProfileNoise(BufferedInputTrack& profileTrack);
-    void ReduceNoise(BufferedInputTrack& inputTrack, BufferedOutputTrack &outputTrack);
+    NoiseReduction(NoiseReduction::Settings& settings, double sampleRate);
+    ~NoiseReduction();
+    void ProfileNoise(InputTrack& profileTrack);
+    void ReduceNoise(InputTrack& inputTrack, OutputTrack &outputTrack);
 private:
-    std::unique_ptr<BufferedStatistics> mStatistics;
-    BufferedNoiseReduction::Settings mSettings;
+    std::unique_ptr<Statistics> mStatistics;
+    NoiseReduction::Settings mSettings;
     double mSampleRate;
 };

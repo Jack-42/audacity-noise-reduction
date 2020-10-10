@@ -2,10 +2,10 @@
 
 #include "Types.h"
 
-class BufferedOutputTrack
+class OutputTrack
 {
 public:
-    BufferedOutputTrack();
+    OutputTrack();
     void Append(float* buffer, size_t length);
     const FloatVector& Buffer() const { return mBuffer; }
     size_t Length() const { return mLength; }

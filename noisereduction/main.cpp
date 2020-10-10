@@ -1,8 +1,8 @@
 #include <iostream>
-#include "BufferedNoiseReduction.h"
-#include "BufferedInputTrack.h"
-#include "BufferedOutputTrack.h"
-#include "BufferedTrackUtils.h"
+#include "NoiseReduction.h"
+#include "InputTrack.h"
+#include "OutputTrack.h"
+#include "TrackUtils.h"
 #include "loguru.hpp"
 #include "Utils.h"
 #include "cxxopts.hpp"
@@ -41,12 +41,12 @@ int main(int argc, char * argv[]) {
 
     SndContext ctx = openAudioFile(result["input"].as<std::string>().c_str());
 
-    BufferedNoiseReduction::Settings settings;
+    NoiseReduction::Settings settings;
     settings.mNewSensitivity = result["sensitivity"].as<float>();
     settings.mFreqSmoothingBands = result["smoothing"].as<int>();
     settings.mNoiseGain = result["noiseGain"].as<float>();
 
-    BufferedNoiseReduction reduction(settings, ctx.info.samplerate);
+    NoiseReduction reduction(settings, ctx.info.samplerate);
 
     size_t t0 = 0;
     size_t t1 = ctx.info.frames;
@@ -59,22 +59,22 @@ int main(int argc, char * argv[]) {
     }
 
     std::cout << "Profiling noise..." << std::endl;
-    std::vector<BufferedInputTrack> profileTracks = BufferedTrackUtils::readTracksFromContext(ctx, t0, t1);
+    std::vector<InputTrack> profileTracks = TrackUtils::readTracksFromContext(ctx, t0, t1);
     for (auto& profileTrack : profileTracks) {
         reduction.ProfileNoise(profileTrack);
     }
 
     std::cout << "Denoising..." << std::endl;
-    std::vector<BufferedInputTrack> inputTracks = BufferedTrackUtils::readTracksFromContext(ctx);
-    std::vector<BufferedOutputTrack> outputTracks;
+    std::vector<InputTrack> inputTracks = TrackUtils::readTracksFromContext(ctx);
+    std::vector<OutputTrack> outputTracks;
     for (auto& inputTrack : inputTracks) {
-        BufferedOutputTrack outputTrack;
+        OutputTrack outputTrack;
         reduction.ReduceNoise(inputTrack, outputTrack);
         outputTracks.push_back(outputTrack);
     }
     
     const char* outputPath = result["output"].as<std::string>().c_str();
-    BufferedTrackUtils::writeTracksToFile(outputPath, outputTracks, ctx.info.channels, ctx.info.samplerate);
+    TrackUtils::writeTracksToFile(outputPath, outputTracks, ctx.info.channels, ctx.info.samplerate);
 
     return 0;
 }

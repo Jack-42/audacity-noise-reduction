@@ -1,21 +1,21 @@
-#include "BufferedTrackUtils.h"
+#include "TrackUtils.h"
 #include "loguru.hpp"
 #include <memory>
 
-std::vector<BufferedInputTrack> BufferedTrackUtils::readTracksFromContext(const SndContext& ctx, size_t t0/* = 0*/, size_t t1/* = 0*/)
+std::vector<InputTrack> TrackUtils::readTracksFromContext(const SndContext& ctx, size_t t0/* = 0*/, size_t t1/* = 0*/)
 {
-    std::vector<BufferedInputTrack> tracks;
+    std::vector<InputTrack> tracks;
 
     for (int channel = 0; channel < ctx.info.channels; channel++) {
         LOG_F(INFO, "Reading channel %d", channel);
-        BufferedInputTrack track = readOneTrackFromContext(ctx, channel, t0, t1);
+        InputTrack track = readOneTrackFromContext(ctx, channel, t0, t1);
         tracks.push_back(track);
     }
 
     return tracks;
 }
 
-BufferedInputTrack BufferedTrackUtils::readOneTrackFromContext(const SndContext &ctx, int channel, size_t t0/* = 0*/, size_t t1/* = 0*/)
+InputTrack TrackUtils::readOneTrackFromContext(const SndContext &ctx, int channel, size_t t0/* = 0*/, size_t t1/* = 0*/)
 {
     // if t1 is undefined, read full track
     if (t1 == 0)
@@ -42,10 +42,10 @@ BufferedInputTrack BufferedTrackUtils::readOneTrackFromContext(const SndContext 
         writePtr++;
     }
 
-    return BufferedInputTrack(buffer);
+    return InputTrack(buffer);
 }
 
-void BufferedTrackUtils::writeTracksToFile(const char* path, const std::vector<BufferedOutputTrack> &tracks, int channels, int sampleRate)
+void TrackUtils::writeTracksToFile(const char* path, const std::vector<OutputTrack> &tracks, int channels, int sampleRate)
 {
     if (tracks.empty()) {
         LOG_F(WARNING, "Tracks are empty");
