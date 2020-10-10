@@ -8,7 +8,7 @@
 \class EffectBufferedNoiseReduction
 \brief A two-pass effect to reduce background noise.
   The first pass is done over just noise.  For each windowed sample
-  of the sound, we take a FFT and then BufferedStatistics are tabulated for
+  of the sound, we take a FFT and then statistics are tabulated for
   each frequency band.
   During the noise reduction phase, we start by setting a gain control
   for each frequency band such that if the sound has exceeded the
@@ -110,7 +110,7 @@ public:
 #endif
     {}
 
-    // Noise profile BufferedStatistics follow
+    // Noise profile statistics follow
 
     double mRate; // Rate of profile track(s) -- processed tracks must match
     size_t mWindowSize;
@@ -859,6 +859,11 @@ BufferedNoiseReduction::BufferedNoiseReduction(BufferedNoiseReduction::Settings&
     size_t spectrumSize = 1 + mSettings.WindowSize() / 2;
     mStatistics.reset(new BufferedStatistics(spectrumSize, mSampleRate, mSettings.mWindowTypes));
 }
+
+// found out why destructor is important:
+// otherwise error with unique_ptr because Statistics is incomplete type
+// also important to define destructor here, not directly in header, because Statistics needs to be defined
+BufferedNoiseReduction::~BufferedNoiseReduction() = default;
 
 void BufferedNoiseReduction::ProfileNoise(BufferedInputTrack &profileTrack) {
     LOG_SCOPE_F(INFO, "Profiling noise");

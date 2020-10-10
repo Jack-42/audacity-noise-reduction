@@ -47,6 +47,7 @@ public:
     };
 
     BufferedNoiseReduction(BufferedNoiseReduction::Settings& settings, double sampleRate);
+    ~BufferedNoiseReduction();
     void ProfileNoise(BufferedInputTrack& profileTrack);
     void ReduceNoise(BufferedInputTrack& inputTrack, BufferedOutputTrack &outputTrack);
 private:
