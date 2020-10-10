@@ -129,7 +129,7 @@ class NoiseReductionWorker
 {
 public:
     typedef NoiseReduction::Settings Settings;
-    typedef Statistics BufferedStatistics;
+    typedef Statistics Statistics;
 
     NoiseReductionWorker(const NoiseReduction::Settings &settings, double sampleRate
 #ifdef EXPERIMENTAL_SPECTRAL_EDITING
@@ -138,21 +138,21 @@ public:
     );
     NoiseReductionWorker();
 
-    bool ProcessOne(BufferedStatistics &statistics, InputTrack& track, OutputTrack* outputTrack);
+    bool ProcessOne(Statistics &statistics, InputTrack& track, OutputTrack* outputTrack);
 
 private:
 
     void StartNewTrack();
-    void ProcessSamples(BufferedStatistics &statistics,
+    void ProcessSamples(Statistics &statistics,
                         float *buffer, size_t len, OutputTrack* outputTrack);
     void FillFirstHistoryWindow();
     void ApplyFreqSmoothing(FloatVector &gains);
-    void GatherStatistics(BufferedStatistics &statistics);
-    inline bool Classify(const BufferedStatistics &statistics, int band);
-    void ReduceNoise(const BufferedStatistics &statistics, OutputTrack* outputTrack);
+    void GatherStatistics(Statistics &statistics);
+    inline bool Classify(const Statistics &statistics, int band);
+    void ReduceNoise(const Statistics &statistics, OutputTrack* outputTrack);
     void RotateHistoryWindows();
-    void FinishTrackStatistics(BufferedStatistics &statistics);
-    void FinishTrack(BufferedStatistics &statistics, OutputTrack* outputTrack);
+    void FinishTrackStatistics(Statistics &statistics);
+    void FinishTrack(Statistics &statistics, OutputTrack* outputTrack);
 
 private:
 
@@ -439,7 +439,7 @@ void NoiseReductionWorker::StartNewTrack()
 }
 
 void NoiseReductionWorker::ProcessSamples
-(BufferedStatistics &statistics, float *buffer, size_t len, OutputTrack* outputTrack)
+(Statistics &statistics, float *buffer, size_t len, OutputTrack* outputTrack)
 {
     while (len && mOutStepCount * mStepSize < mInSampleCount) {
         auto avail = std::min(len, mWindowSize - mInWavePos);
@@ -515,7 +515,7 @@ void NoiseReductionWorker::RotateHistoryWindows()
     std::rotate(mQueue.begin(), mQueue.end() - 1, mQueue.end());
 }
 
-void NoiseReductionWorker::FinishTrackStatistics(BufferedStatistics &statistics)
+void NoiseReductionWorker::FinishTrackStatistics(Statistics &statistics)
 {
     const int windows = statistics.mTrackWindows;
     const int multiplier = statistics.mTotalWindows;
@@ -537,7 +537,7 @@ void NoiseReductionWorker::FinishTrackStatistics(BufferedStatistics &statistics)
 }
 
 void NoiseReductionWorker::FinishTrack
-(BufferedStatistics &statistics, OutputTrack* outputTrack)
+(Statistics &statistics, OutputTrack* outputTrack)
 {
     // Keep flushing empty input buffers through the history
     // windows until we've output exactly as many samples as
@@ -553,7 +553,7 @@ void NoiseReductionWorker::FinishTrack
     }
 }
 
-void NoiseReductionWorker::GatherStatistics(BufferedStatistics &statistics)
+void NoiseReductionWorker::GatherStatistics(Statistics &statistics)
 {
     ++statistics.mTrackWindows;
 
@@ -591,7 +591,7 @@ void NoiseReductionWorker::GatherStatistics(BufferedStatistics &statistics)
 // Return true iff the given band of the "center" window looks like noise.
 // Examine the band in a few neighboring windows to decide.
 inline
-bool NoiseReductionWorker::Classify(const BufferedStatistics &statistics, int band)
+bool NoiseReductionWorker::Classify(const Statistics &statistics, int band)
 {
     switch (mMethod) {
 #ifdef OLD_METHOD_AVAILABLE
@@ -660,7 +660,7 @@ bool NoiseReductionWorker::Classify(const BufferedStatistics &statistics, int ba
 }
 
 void NoiseReductionWorker::ReduceNoise
-(const BufferedStatistics &statistics, OutputTrack* outputTrack)
+(const Statistics &statistics, OutputTrack* outputTrack)
 {
     // Raise the gain for elements in the center of the sliding history
     // or, if isolating noise, zero out the non-noise
@@ -806,7 +806,7 @@ void NoiseReductionWorker::ReduceNoise
     }
 }
 
-bool NoiseReductionWorker::ProcessOne(BufferedStatistics &statistics, InputTrack& inputTrack, OutputTrack* outputTrack)
+bool NoiseReductionWorker::ProcessOne(Statistics &statistics, InputTrack& inputTrack, OutputTrack* outputTrack)
 {
     /**
      * Frames coming from libsndfile are striped, channel-wise: [{left, right},  {left, right}, ...]
