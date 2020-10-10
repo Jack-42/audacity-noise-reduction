@@ -2,30 +2,34 @@
 #include "loguru.hpp"
 #include <memory>
 
-std::vector<BufferedInputTrack> BufferedTrackUtils::readTracksFromContext(const SndContext& ctx)
+std::vector<BufferedInputTrack> BufferedTrackUtils::readTracksFromContext(const SndContext& ctx, size_t t0/* = 0*/, size_t t1/* = 0*/)
 {
     std::vector<BufferedInputTrack> tracks;
 
     for (int channel = 0; channel < ctx.info.channels; channel++) {
         LOG_F(INFO, "Reading channel %d", channel);
-        BufferedInputTrack track = readOneTrackFromContext(ctx, channel);
+        BufferedInputTrack track = readOneTrackFromContext(ctx, channel, t0, t1);
         tracks.push_back(track);
     }
 
     return tracks;
 }
 
-BufferedInputTrack BufferedTrackUtils::readOneTrackFromContext(const SndContext &ctx, int channel)
+BufferedInputTrack BufferedTrackUtils::readOneTrackFromContext(const SndContext &ctx, int channel, size_t t0/* = 0*/, size_t t1/* = 0*/)
 {
-    const size_t frameCount = (size_t)ctx.info.frames;
+    // if t1 is undefined, read full track
+    if (t1 == 0)
+        t1 = (size_t)ctx.info.frames;
+
+    const size_t frameCount = t1 - t0 - 1;
     FloatVector buffer(frameCount);
     
-    sf_seek(ctx.file, 0, SEEK_SET);
+    sf_seek(ctx.file, t0, SEEK_SET);
     float* writePtr = &buffer[0];
 
     // can only read full frames from libsnd.
     // will probably be a lot faster to read the whole thing and then split it
-    for (size_t frame = 0; frame < frameCount; frame++) {
+    for (size_t frame = t0; frame < t1; frame++) {
         float frameBuffer[ctx.info.channels];
         size_t read = sf_readf_float(ctx.file, frameBuffer, 1);
 
