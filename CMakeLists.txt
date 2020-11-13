@@ -18,11 +18,13 @@ set(SRC_FILES
 )
 
 find_package(Threads REQUIRED)
+find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED)
 
 add_executable(noisereduction ${SRC_FILES})
-target_link_libraries(noisereduction Threads::Threads)
 
-
-# TODO: add libaries (libsndfile, pthread)
+target_link_libraries(noisereduction
+    Threads::Threads
+    ${LIBSNDFILE_LIBRARY}
+)
 
 # TODO: add test target
