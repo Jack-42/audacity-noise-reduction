@@ -15,15 +15,16 @@ set(SRC_FILES
     noisereduction/InputTrack.cpp
     noisereduction/OutputTrack.cpp
     noisereduction/TrackUtils.cpp
+    noisereduction/main.cpp
 )
 
 find_package(Threads REQUIRED)
 find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED)
 find_library(DL_LIBRARY dl REQUIRED)
 
-add_executable(noisereduction ${SRC_FILES})
+add_executable(noisereduction_driver ${SRC_FILES})
 
-target_link_libraries(noisereduction
+target_link_libraries(noisereduction_driver
     Threads::Threads
     ${LIBSNDFILE_LIBRARY}
     ${DL_LIBRARY}
