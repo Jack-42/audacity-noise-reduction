@@ -35,8 +35,12 @@ target_link_libraries(noisereduction_core
 add_executable(noisereduction_driver
     noisereduction/main.cpp
 )
-
 target_link_libraries(noisereduction_driver PRIVATE noisereduction_core)
 
-# TODO: create test executable, link the core library
-
+# create test executable, link the core library
+add_executable(test_runner
+    noisereduction/tests/test_main.cpp
+    noisereduction/tests/test_audacity.cpp
+    noisereduction/tests/test_mmap_snd.cpp
+)
+target_link_libraries(test_runner PRIVATE noisereduction_core)
