@@ -7,6 +7,7 @@ project(AudacityNoiseReduction VERSION 1.0.0)
 
 add_compile_options(-std=c++11 -Wall -Wextra -pedantic)
 
+# create core library
 set(SRC_FILES
     noisereduction/Utils.cpp
     noisereduction/RealFFTf.cpp
@@ -15,19 +16,27 @@ set(SRC_FILES
     noisereduction/InputTrack.cpp
     noisereduction/OutputTrack.cpp
     noisereduction/TrackUtils.cpp
-    noisereduction/main.cpp
 )
+
+add_library(noisereduction_core STATIC ${SRC_FILES})
 
 find_package(Threads REQUIRED)
 find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED)
 find_library(DL_LIBRARY dl REQUIRED)
 
-add_executable(noisereduction_driver ${SRC_FILES})
-
-target_link_libraries(noisereduction_driver
+target_link_libraries(noisereduction_core
+    PUBLIC
     Threads::Threads
     ${LIBSNDFILE_LIBRARY}
     ${DL_LIBRARY}
 )
 
-# TODO: add test target
+# create driver executable, link the core library
+add_executable(noisereduction_driver
+    noisereduction/main.cpp
+)
+
+target_link_libraries(noisereduction_driver PRIVATE noisereduction_core)
+
+# TODO: create test executable, link the core library
+
