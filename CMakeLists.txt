@@ -61,12 +61,9 @@ set(TEST_SRC_FILES
     noisereduction/tests/test_main.cpp
     noisereduction/tests/test_audacity.cpp
 )
-
 if (NOT WIN32)
     list(APPEND TEST_SRC_FILES noisereduction/tests/test_mmap_snd.cpp)
 endif()
-
-message(STATUS "${TEST_SRC_FILES}")
 
 add_executable(test_runner ${TEST_SRC_FILES})
 
