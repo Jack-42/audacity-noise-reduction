@@ -2,6 +2,7 @@
 #include "loguru.hpp"
 #include <memory>
 #include "MemoryX.h"
+#include <stdexcept>
 
 std::vector<InputTrack> TrackUtils::readTracksFromContext(const SndContext& ctx, size_t t0/* = 0*/, size_t t1/* = 0*/)
 {
