@@ -43,6 +43,10 @@ set(CORE_LIBRARIES
     #${DL_LIBRARY}
 )
 
+# must add include dir on Windows
+if(WIN32)
+	target_include_directories(noisereduction_core PUBLIC "C:\\Program Files\\Mega-Nerd\\libsndfile\\include")
+endif()
 
 target_link_libraries(noisereduction_core PUBLIC ${CORE_LIBRARIES})
 
