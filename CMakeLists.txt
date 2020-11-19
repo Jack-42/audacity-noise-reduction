@@ -32,7 +32,7 @@ find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED
 	# need this name to find it on Windows
 	NAMES libsndfile-1
 	# default installation path on windows, cannot find it without path
-	PATHS "C:\\Program Files\\Mega-Nerd\\libsndfile\\lib"
+	HINTS "C:\\Program Files\\Mega-Nerd\\libsndfile\\lib"
 )
 # TODO: find fix for Windows
 #find_library(DL_LIBRARY dl REQUIRED)
@@ -42,6 +42,7 @@ set(CORE_LIBRARIES
     ${LIBSNDFILE_LIBRARY}
     #${DL_LIBRARY}
 )
+
 
 target_link_libraries(noisereduction_core PUBLIC ${CORE_LIBRARIES})
 
