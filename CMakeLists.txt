@@ -29,8 +29,8 @@ find_package(Threads REQUIRED)
 set(LIBSNDFILE_DIR "C:\\Program Files\\Mega-Nerd\\libsndfile")
 
 find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED
-	NAMES libsndfile-1 # has this name on Windows
-	HINTS "${LIBSNDFILE_DIR}\\lib" # need this path hint on Windows
+    NAMES libsndfile-1 # has this name on Windows
+    HINTS "${LIBSNDFILE_DIR}\\lib" # need this path hint on Windows
 )
 
 # TODO: find fix for Windows
@@ -44,7 +44,7 @@ set(CORE_LIBRARIES
 
 # must add include dir on Windows
 if(WIN32)
-	target_include_directories(noisereduction_core PUBLIC "${LIBSNDFILE_DIR}\\include")
+    target_include_directories(noisereduction_core PUBLIC "${LIBSNDFILE_DIR}\\include")
 endif()
 
 target_link_libraries(noisereduction_core PUBLIC ${CORE_LIBRARIES})
@@ -60,8 +60,13 @@ target_link_libraries(noisereduction_driver PRIVATE noisereduction_core)
 set(TEST_SRC_FILES
     noisereduction/tests/test_main.cpp
     noisereduction/tests/test_audacity.cpp
-    noisereduction/tests/test_mmap_snd.cpp
 )
+
+if (NOT WIN32)
+    list(APPEND TEST_SRC_FILES noisereduction/tests/test_mmap_snd.cpp)
+endif()
+
+message(STATUS "${TEST_SRC_FILES}")
 
 add_executable(test_runner ${TEST_SRC_FILES})
 
