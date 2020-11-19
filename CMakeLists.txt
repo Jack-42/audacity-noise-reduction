@@ -9,6 +9,9 @@ project(AudacityNoiseReduction VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF) # disable compiler-specific extensions
 
+# TODO: only for testing
+add_compile_options(-w)
+
 ################################################################################
 # Create core library
 set(CORE_SRC_FILES
