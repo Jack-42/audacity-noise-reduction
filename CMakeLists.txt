@@ -1,11 +1,16 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
+# TODO: dirty, is ignored on Windows anyway, uses MSCV with default generator (which is Visual Studio)
 set(CMAKE_C_COMPILER clang)
 set(CMAKE_CXX_COMPILER clang++)
 
 project(AudacityNoiseReduction VERSION 1.0.0)
 
-add_compile_options(-std=c++11 -Wall -Wextra -pedantic)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_EXTENSIONS OFF) # disable compiler-specific extensions
+
+# TODO: find fix for windows
+#add_compile_options(-Wall -Wextra -pedantic)
 
 ################################################################################
 # Create core library
@@ -22,16 +27,19 @@ set(CORE_SRC_FILES
 add_library(noisereduction_core STATIC ${CORE_SRC_FILES})
 
 find_package(Threads REQUIRED)
-find_library(LIBSNDFILE_LIBRARY REQUIRED
-	NAMES sndile libsndfile-1	# libsndfile-1 on Windows
-	PATHS "C:\\Program Files\\Mega-Nerd\\libsndfile\\lib"	# default installation path on windows, cannot find it without path
+find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED
+	# need this name to find it on Windows
+	NAMES libsndfile-1
+	# default installation path on windows, cannot find it without path
+	PATHS "C:\\Program Files\\Mega-Nerd\\libsndfile\\lib"
 )
-find_library(DL_LIBRARY dl REQUIRED)
+# TODO: find fix for Windows
+#find_library(DL_LIBRARY dl REQUIRED)
 
 set(CORE_LIBRARIES
     Threads::Threads
     ${LIBSNDFILE_LIBRARY}
-    ${DL_LIBRARY}
+    #${DL_LIBRARY}
 )
 
 target_link_libraries(noisereduction_core PUBLIC ${CORE_LIBRARIES})
