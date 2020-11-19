@@ -22,7 +22,10 @@ set(CORE_SRC_FILES
 add_library(noisereduction_core STATIC ${CORE_SRC_FILES})
 
 find_package(Threads REQUIRED)
-find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED)
+find_library(LIBSNDFILE_LIBRARY REQUIRED
+	NAMES sndile libsndfile-1	# libsndfile-1 on Windows
+	PATHS "C:\\Program Files\\Mega-Nerd\\libsndfile\\lib"	# default installation path on windows, cannot find it without path
+)
 find_library(DL_LIBRARY dl REQUIRED)
 
 set(CORE_LIBRARIES
