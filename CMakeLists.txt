@@ -15,16 +15,30 @@ add_compile_options(-w)
 ################################################################################
 # Create core library
 set(CORE_SRC_FILES
-    noisereduction/Utils.cpp
-    noisereduction/RealFFTf.cpp
-    noisereduction/Extensions.cpp
     noisereduction/NoiseReduction.cpp
     noisereduction/InputTrack.cpp
     noisereduction/OutputTrack.cpp
     noisereduction/TrackUtils.cpp
+	noisereduction/Utils.cpp
+    noisereduction/RealFFTf.cpp
+    noisereduction/Extensions.cpp
 )
 
-add_library(noisereduction_core STATIC ${CORE_SRC_FILES})
+# Add headers as well so they are listed in Visual Studio
+set(CORE_HEADER_FILES
+	noisereduction/NoiseReduction.h
+	noisereduction/InputTrack.h
+	noisereduction/OutputTrack.h
+	noisereduction/TrackUtils.h
+	noisereduction/Utils.h
+	noisereduction/RealFFTf.h
+	noisereduction/Types.h
+	noisereduction/MemoryX.h
+	noisereduction/cxxopts.hpp
+	noisereduction/loguru.hpp	
+)
+	
+add_library(noisereduction_core STATIC ${CORE_SRC_FILES} ${CORE_HEADER_FILES})
 
 find_package(Threads REQUIRED)
 
@@ -55,6 +69,8 @@ target_link_libraries(noisereduction_core PUBLIC ${CORE_LIBRARIES})
 ################################################################################
 # Create driver executable
 add_executable(noisereduction_driver noisereduction/main.cpp)
+
+# must add include dir on Windows so header files are shown in Visual studio
 
 target_link_libraries(noisereduction_driver PRIVATE noisereduction_core)
 
