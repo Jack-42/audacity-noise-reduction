@@ -1,14 +1,18 @@
 #include "Utils.h"
 #include <assert.h>
 #include <sndfile.h>
+#include <algorithm>
+#include <string.h>
+
+#if !defined(WINDOWS)
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <algorithm>
-#include <string.h>
+#endif
 
+#if !defined(WINDOWS)
 SndMmap::SndMmap(const char* path) {
     struct stat st;
     stat(path, &st);
@@ -60,19 +64,23 @@ SndMmap::SndMmap(const char* path) {
 
 SndContext SndMmap::Open() {
     SF_INFO info = { };
-    auto snd = sf_open_virtual(&this->interface, SFM_READ, &info, this);
+    SNDFILE* snd = sf_open_virtual(&this->interface, SFM_READ, &info, this);
     SndContext ctx = {};
     ctx.file = snd;
     ctx.info = info;
 
     return ctx;
 }
+#endif
 
 SndContext openAudioFile(const char* path) {
-    SF_INFO info = { };
-    // SNDFILE* snd = sf_open(path, SFM_READ, &info);
+    SF_INFO info = {};
+#if !defined(WINDOWS)
     SndMmap* mmaped = new SndMmap(path);
-    auto snd = sf_open_virtual(&mmaped->interface, SFM_READ, &info, mmaped);
+    SNDFILE* snd = sf_open_virtual(&mmaped->interface, SFM_READ, &info, mmaped);
+#else
+    SNDFILE* snd = sf_open(path, SFM_READ, &info);
+#endif
     assert(snd);
     SndContext ctx = { };
     ctx.file = snd;
