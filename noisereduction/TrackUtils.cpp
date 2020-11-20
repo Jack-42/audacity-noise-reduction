@@ -29,10 +29,12 @@ InputTrack TrackUtils::readOneTrackFromContext(const SndContext &ctx, int channe
     sf_seek(ctx.file, t0, SEEK_SET);
     float* writePtr = &buffer[0];
 
+    // allocating on heap because variable size stack arrays are evil!
+    float* frameBuffer = new float[ctx.info.channels];
+
     // can only read full frames from libsnd.
     // will probably be a lot faster to read the whole thing and then split it
     for (size_t frame = t0; frame < t1; frame++) {
-        float frameBuffer[ctx.info.channels];
         size_t read = sf_readf_float(ctx.file, frameBuffer, 1);
 
         if (read == 0) {
@@ -43,6 +45,8 @@ InputTrack TrackUtils::readOneTrackFromContext(const SndContext &ctx, int channe
         *writePtr = frameBuffer[channel];
         writePtr++;
     }
+
+    delete[] frameBuffer;
 
     return InputTrack(buffer);
 }
