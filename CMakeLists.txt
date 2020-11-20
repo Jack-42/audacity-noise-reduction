@@ -50,14 +50,16 @@ find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED
     HINTS "${LIBSNDFILE_DIR}\\lib" # need this path hint on Windows
 )
 
-# TODO: find fix for Windows
-#find_library(DL_LIBRARY dl REQUIRED)
-
 set(CORE_LIBRARIES
     Threads::Threads
     ${LIBSNDFILE_LIBRARY}
-    #${DL_LIBRARY}
 )
+
+# do not need dl library on Windows
+if(NOT WIN32)
+	find_library(DL_LIBRARY dl REQUIRED)
+	list(APPEND CORE_LIBRARIES ${DL_LIBRARY})
+endif()
 
 # must add include dir on Windows
 if(WIN32)
@@ -69,8 +71,6 @@ target_link_libraries(noisereduction_core PUBLIC ${CORE_LIBRARIES})
 ################################################################################
 # Create driver executable
 add_executable(noisereduction_driver noisereduction/main.cpp)
-
-# must add include dir on Windows so header files are shown in Visual studio
 
 target_link_libraries(noisereduction_driver PRIVATE noisereduction_core)
 
