@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <string.h>
 
-#if !defined(WINDOWS)
+#ifndef WINDOWS
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -12,7 +12,7 @@
 #include <unistd.h>
 #endif
 
-#if !defined(WINDOWS)
+#ifndef WINDOWS
 SndMmap::SndMmap(const char* path) {
     struct stat st;
     stat(path, &st);
@@ -63,7 +63,7 @@ SndMmap::SndMmap(const char* path) {
 }
 
 SndContext SndMmap::Open() {
-    SF_INFO info = { };
+    SF_INFO info = {};
     SNDFILE* snd = sf_open_virtual(&this->interface, SFM_READ, &info, this);
     SndContext ctx = {};
     ctx.file = snd;
@@ -75,18 +75,16 @@ SndContext SndMmap::Open() {
 
 SndContext openAudioFile(const char* path) {
     SF_INFO info = {};
-#if !defined(WINDOWS)
+#ifndef WINDOWS
     SndMmap* mmaped = new SndMmap(path);
     SNDFILE* snd = sf_open_virtual(&mmaped->interface, SFM_READ, &info, mmaped);
 #else
     SNDFILE* snd = sf_open(path, SFM_READ, &info);
 #endif
     assert(snd);
-    SndContext ctx = { };
+    SndContext ctx = {};
     ctx.file = snd;
     ctx.info = info;
 
     return ctx;
 }
-
-

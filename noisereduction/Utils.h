@@ -10,7 +10,7 @@ struct SndContext {
     SF_INFO info;
 };
 
-#if !defined(WINDOWS)
+#ifndef WINDOWS
 class SndMmap {
     sf_count_t length;
     int fd;
