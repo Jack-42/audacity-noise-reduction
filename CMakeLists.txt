@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 
-# TODO: dirty, is ignored on Windows anyway, uses MSCV with default generator (which is Visual Studio)
 if(NOT WIN32)
 	# do not use clang on Windows, will use MSVC anyway with default Visual Studio generator, even if clang is specified
 	set(CMAKE_C_COMPILER clang)
