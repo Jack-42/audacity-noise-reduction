@@ -42,27 +42,34 @@ add_library(noisereduction_core STATIC ${CORE_SRC_FILES} ${CORE_HEADER_FILES})
 
 find_package(Threads REQUIRED)
 
-# default installation dir for libsndfile on Windows
-set(LIBSNDFILE_DIR "C:\\Program Files\\Mega-Nerd\\libsndfile")
+if(WIN32)
+	# default installation dir for libsndfile on Windows
+	set(LIBSNDFILE_DIR "C:\\Program Files\\Mega-Nerd\\libsndfile")
+endif()
 
-find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED
-    NAMES libsndfile-1 # has this name on Windows
-    HINTS "${LIBSNDFILE_DIR}\\lib" # need this path hint on Windows
-)
+
+if(WIN32)
+	# on Windows, need full name of library and path hint to find it
+	find_library(LIBSNDFILE_LIBRARY libsndfile-1 REQUIRED
+		HINTS "${LIBSNDFILE_DIR}\\lib"
+	)
+else()
+	find_library(LIBSNDFILE_LIBRARY sndfile REQUIRED)
+endif()
 
 set(CORE_LIBRARIES
     Threads::Threads
     ${LIBSNDFILE_LIBRARY}
 )
 
-# do not need dl library on Windows
 if(NOT WIN32)
+	# do not need dl library on Windows
 	find_library(DL_LIBRARY dl REQUIRED)
 	list(APPEND CORE_LIBRARIES ${DL_LIBRARY})
 endif()
 
-# must add include dir on Windows
 if(WIN32)
+	# must add include dir on Windows
     target_include_directories(noisereduction_core PUBLIC "${LIBSNDFILE_DIR}\\include")
 endif()
 
