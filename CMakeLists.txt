@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
 
 # TODO: dirty, is ignored on Windows anyway, uses MSCV with default generator (which is Visual Studio)
-set(CMAKE_C_COMPILER clang)
-set(CMAKE_CXX_COMPILER clang++)
+if(NOT WIN32)
+	# do not use clang on Windows, will use MSVC anyway with default Visual Studio generator, even if clang is specified
+	set(CMAKE_C_COMPILER clang)
+	set(CMAKE_CXX_COMPILER clang++)
+endif()
 
 project(AudacityNoiseReduction VERSION 1.0.0)
 
