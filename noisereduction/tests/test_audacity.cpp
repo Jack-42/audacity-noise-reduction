@@ -51,9 +51,9 @@ void compare(const char* inputPath, const char* groundTruthPath) {
     }
 
     // TODO path is now specific to visual studio, should just be relative to executables
-    TrackUtils::writeTracksToFile("../build/Debug/temp/processed.wav", outputTracks, inputCtx.info.channels, inputCtx.info.samplerate);
+    TrackUtils::writeTracksToFile("./temp/processed.wav", outputTracks, inputCtx.info.channels, inputCtx.info.samplerate);
 
-    SndContext processedCtx = TrackUtils::openAudioFile("../build/Debug/temp/processed.wav");
+    SndContext processedCtx = TrackUtils::openAudioFile("./temp/processed.wav");
     REQUIRE(processedCtx.info.frames == groundTruthCtx.info.frames);
     REQUIRE(processedCtx.info.channels == groundTruthCtx.info.channels);
 
@@ -71,10 +71,10 @@ void compare(const char* inputPath, const char* groundTruthPath) {
 
 TEST_CASE( "Noise Reduction", "[NoiseReduction]" ) {
     SECTION( "mono track" ) {
-        compare("dtmf-noise-mono.wav", "dtmf-noise-mono-audacity-gain-39-sensitivity-16-smooth-0.wav");
+        compare("../../samples/dtmf-noise-mono.wav", "../../samples/dtmf-noise-mono-audacity-gain-39-sensitivity-16-smooth-0.wav");
     }
 
     SECTION( "stereo track" ) {
-        compare("dtmf-noise-stereo.wav", "dtmf-noise-stereo-audacity-gain-39-sensitivity-16-smooth-0.wav");
+        compare("../../samples/dtmf-noise-stereo.wav", "../../samples/dtmf-noise-stereo-audacity-gain-39-sensitivity-16-smooth-0.wav");
     }
 }
