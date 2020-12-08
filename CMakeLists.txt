@@ -7,7 +7,10 @@ if(NOT WIN32)
 	set(CMAKE_CXX_COMPILER clang++)
 endif()
 
-# define constant USE_MMAP, makes code more self explanatory
+if(NOT WIN32)
+	# mmap not supported for Windows
+	set(USE_MMAP TRUE)
+endif()
 
 project(AudacityNoiseReduction VERSION 1.0.0)
 
@@ -31,8 +34,7 @@ set(CORE_SRC_FILES
     noisereduction/RealFFTf.cpp
     noisereduction/Extensions.cpp
 )
-if(NOT WIN32)
-	# mmap not supported for Windows
+if(USE_MMAP)
 	list(APPEND CORE_SRC_FILES noisereduction/SndMmap.cpp)
 endif()
 
@@ -49,15 +51,13 @@ set(CORE_HEADER_FILES
 	noisereduction/cxxopts.hpp
 	noisereduction/loguru.hpp	
 )
-if(NOT WIN32)
-	# mmap not supported for Windows
+if(USE_MMAP)
 	list(APPEND CORE_HEADER_FILES noisereduction/SndMmap.h)
 endif()
 	
 add_library(noisereduction_core STATIC ${CORE_SRC_FILES} ${CORE_HEADER_FILES})
 
-if(NOT WIN32)
-	# mmap not supported for Windows
+if(USE_MMAP)
 	target_compile_definitions(noisereduction_core PUBLIC USE_MMAP)
 endif()
 
@@ -107,7 +107,7 @@ set(TEST_SRC_FILES
     noisereduction/tests/test_main.cpp
     noisereduction/tests/test_audacity.cpp
 )
-if (NOT WIN32)
+if(USE_MMAP)
     list(APPEND TEST_SRC_FILES noisereduction/tests/test_mmap_snd.cpp)
 endif()
 
