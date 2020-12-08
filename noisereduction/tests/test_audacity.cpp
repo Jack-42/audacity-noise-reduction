@@ -15,6 +15,9 @@
 #include "../NoiseReduction.h"
 #include "../TrackUtils.h"
 
+// define in CMake
+#define SAMPLES_DIR "../samples/"
+
 std::vector<float> readContext(SndContext& ctx) {
     auto size = ctx.info.frames * ctx.info.channels;
     std::vector<float> buff(size);
@@ -50,7 +53,6 @@ void compare(const char* inputPath, const char* groundTruthPath) {
         outputTracks.push_back(outputTrack);
     }
 
-    // TODO path is now specific to visual studio, should just be relative to executables
     TrackUtils::writeTracksToFile("./temp/processed.wav", outputTracks, inputCtx.info.channels, inputCtx.info.samplerate);
 
     SndContext processedCtx = TrackUtils::openAudioFile("./temp/processed.wav");
@@ -71,10 +73,10 @@ void compare(const char* inputPath, const char* groundTruthPath) {
 
 TEST_CASE( "Noise Reduction", "[NoiseReduction]" ) {
     SECTION( "mono track" ) {
-        compare("../../samples/dtmf-noise-mono.wav", "../../samples/dtmf-noise-mono-audacity-gain-39-sensitivity-16-smooth-0.wav");
+        compare(SAMPLES_DIR "dtmf-noise-mono.wav", SAMPLES_DIR "dtmf-noise-mono-audacity-gain-39-sensitivity-16-smooth-0.wav");
     }
 
     SECTION( "stereo track" ) {
-        compare("../../samples/dtmf-noise-stereo.wav", "../../samples/dtmf-noise-stereo-audacity-gain-39-sensitivity-16-smooth-0.wav");
+        compare(SAMPLES_DIR "dtmf-noise-stereo.wav", SAMPLES_DIR "dtmf-noise-stereo-audacity-gain-39-sensitivity-16-smooth-0.wav");
     }
 }
