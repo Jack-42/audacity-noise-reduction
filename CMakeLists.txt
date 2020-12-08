@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.1)
 
 if(NOT WIN32)
-	# do not use clang on Windows, will use MSVC anyway with default Visual Studio generator, even if clang is specified
+	# do not use clang on Windows,
+	# will use MSVC anyway with default Visual Studio generator, even if clang is specified
 	set(CMAKE_C_COMPILER clang)
 	set(CMAKE_CXX_COMPILER clang++)
 endif()
+
+# define constant USE_MMAP, makes code more self explanatory
 
 project(AudacityNoiseReduction VERSION 1.0.0)
 
@@ -53,13 +56,17 @@ endif()
 	
 add_library(noisereduction_core STATIC ${CORE_SRC_FILES} ${CORE_HEADER_FILES})
 
+if(NOT WIN32)
+	# mmap not supported for Windows
+	target_compile_definitions(noisereduction_core PUBLIC USE_MMAP)
+endif()
+
 find_package(Threads REQUIRED)
 
 if(WIN32)
 	# default installation dir for libsndfile on Windows
 	set(LIBSNDFILE_DIR "C:\\Program Files\\Mega-Nerd\\libsndfile")
 endif()
-
 
 if(WIN32)
 	# on Windows, need full name of library and path hint to find it
