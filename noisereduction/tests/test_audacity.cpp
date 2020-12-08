@@ -50,9 +50,10 @@ void compare(const char* inputPath, const char* groundTruthPath) {
         outputTracks.push_back(outputTrack);
     }
 
-    TrackUtils::writeTracksToFile("/tmp/processed.wav", outputTracks, inputCtx.info.channels, inputCtx.info.samplerate);
+    // TODO path is now specific to visual studio, should just be relative to executables
+    TrackUtils::writeTracksToFile("../build/Debug/temp/processed.wav", outputTracks, inputCtx.info.channels, inputCtx.info.samplerate);
 
-    SndContext processedCtx = TrackUtils::openAudioFile("/tmp/processed.wav");
+    SndContext processedCtx = TrackUtils::openAudioFile("../build/Debug/temp/processed.wav");
     REQUIRE(processedCtx.info.frames == groundTruthCtx.info.frames);
     REQUIRE(processedCtx.info.channels == groundTruthCtx.info.channels);
 
