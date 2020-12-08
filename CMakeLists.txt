@@ -111,4 +111,12 @@ set(TEST_HEADER_FILES
 
 add_executable(test_runner ${TEST_SRC_FILES} ${TEST_HEADER_FILES})
 
+# Define samples directory relative to executable
+if(MSVC)
+	# two levels up because MSVC puts exe under build/Debug
+	target_compile_definitions(test_runner PRIVATE SAMPLES_DIR="../../samples")
+else()
+	target_compile_definitions(test_runner PRIVATE SAMPLES_DIR="../samples")
+endif()
+
 target_link_libraries(test_runner PRIVATE noisereduction_core)

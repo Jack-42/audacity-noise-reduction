@@ -15,9 +15,6 @@
 #include "../NoiseReduction.h"
 #include "../TrackUtils.h"
 
-// define in CMake
-#define SAMPLES_DIR "../samples/"
-
 std::vector<float> readContext(SndContext& ctx) {
     auto size = ctx.info.frames * ctx.info.channels;
     std::vector<float> buff(size);
@@ -73,10 +70,10 @@ void compare(const char* inputPath, const char* groundTruthPath) {
 
 TEST_CASE( "Noise Reduction", "[NoiseReduction]" ) {
     SECTION( "mono track" ) {
-        compare(SAMPLES_DIR "dtmf-noise-mono.wav", SAMPLES_DIR "dtmf-noise-mono-audacity-gain-39-sensitivity-16-smooth-0.wav");
+        compare(SAMPLES_DIR "/dtmf-noise-mono.wav", SAMPLES_DIR "/dtmf-noise-mono-audacity-gain-39-sensitivity-16-smooth-0.wav");
     }
 
     SECTION( "stereo track" ) {
-        compare(SAMPLES_DIR "dtmf-noise-stereo.wav", SAMPLES_DIR "dtmf-noise-stereo-audacity-gain-39-sensitivity-16-smooth-0.wav");
+        compare(SAMPLES_DIR "/dtmf-noise-stereo.wav", SAMPLES_DIR "/dtmf-noise-stereo-audacity-gain-39-sensitivity-16-smooth-0.wav");
     }
 }
